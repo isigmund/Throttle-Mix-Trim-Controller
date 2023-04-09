@@ -6,10 +6,11 @@
 
 
 #define I2C_ADDRESS 0x48
-//#define SERIAL 
+//#define SERIAL_OUT 
 #define troMax 8192
 #define mixMax 8192
 #define trmMax 8192
+#define DEADZONE 2
 
 Joystick_ Joystick(JOYSTICK_DEFAULT_REPORT_ID, // hidReportId
                    JOYSTICK_TYPE_JOYSTICK,     // joystickType
@@ -65,13 +66,13 @@ int32_t readChannelRaw(ADS1115_MUX channel)
 void setup()
 {
   Wire.begin();
-  #ifdef SERIAL
+  #ifdef SERIAL_OUT
   Serial.begin(9600);
   #endif
 
   if (!adc.init())
   {
-    #ifdef SERIAL
+    #ifdef SERIAL_OUT
     Serial.println("ADS1115 not connected!");
     #endif
   }
@@ -112,8 +113,8 @@ void loop()
 {
   int32_t throttle = map(readChannelRaw(ADS1115_COMP_0_GND), -40, 24300, 0, troMax);
   throttleAverage = troAverager.reading(throttle);
-  if (prevThrottleAverage != throttleAverage) {
-    #ifdef SERIAL  
+  if (prevThrottleAverage < throttleAverage - DEADZONE || prevThrottleAverage > throttleAverage - DEADZONE ) {
+    #ifdef SERIAL_OUT  
       Serial.print(" troAverage: ");
       Serial.println(throttleAverage);  
     #endif
@@ -124,8 +125,8 @@ void loop()
 
   int32_t mixture = map(readChannelRaw(ADS1115_COMP_1_GND), -40, 24300, 0, mixMax);
   mixtureAverage = mixAverager.reading(mixture);
-  if (prevMixtureAverage != mixtureAverage) {
-    #ifdef SERIAL
+  if (prevMixtureAverage < mixtureAverage - DEADZONE || prevMixtureAverage > mixtureAverage + DEADZONE) {
+    #ifdef SERIAL_OUT
       Serial.print(" mixAverage: ");
       Serial.println(mixtureAverage);  
     #endif
@@ -136,8 +137,8 @@ void loop()
 
   int32_t trim = map(readChannelRaw(ADS1115_COMP_2_GND), 3790, 18880, 0, trmMax);
   trimAverage = trmAverager.reading(trim);
-  if (prevTrimAverage != trimAverage) {
-    #ifdef SERIAL
+  if (prevTrimAverage < trimAverage - DEADZONE || prevTrimAverage > trimAverage + DEADZONE) {
+    #ifdef SERIAL_OUT
       Serial.print(" trmAverage: ");
       Serial.println(trimAverage);
     #endif    
